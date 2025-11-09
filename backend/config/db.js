@@ -2,15 +2,27 @@ import mongoose from "mongoose";
 
 const connectDB = async () => {
   try {
-    const conn = await mongoose.connect(process.env.MONGO_URI || "mongodb://localhost:27017/foodbooking", {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
+    // Use MONGODB_URI (not MONGO_URI) and remove deprecated options
+    const conn = await mongoose.connect(process.env.MONGODB_URI);
     console.log(`MongoDB Connected: ${conn.connection.host}`);
   } catch (error) {
-    console.error("Database connection error:", error);
-    process.exit(1);
+    console.error("Database connection error:", error.message);
+    // Don't exit process in serverless - remove process.exit(1)
   }
 };
 
-export default connectDB;
+// For serverless compatibility
+let isConnected = false;
+
+export default async function dbConnect() {
+  if (isConnected) {
+    return;
+  }
+  
+  try {
+    await connectDB();
+    isConnected = true;
+  } catch (error) {
+    console.error("Failed to connect to MongoDB:", error);
+  }
+}

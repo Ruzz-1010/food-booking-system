@@ -1,7 +1,7 @@
 import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
-import connectDB from "./config/db.js";
+import dbConnect from "./config/db.js"; // CHANGED from connectDB
 import authRoutes from "./routes/authRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
 import restaurantRoutes from "./routes/restaurantRoutes.js";
@@ -16,14 +16,16 @@ import locationRoutes from "./routes/location.js";
 import serverless from "serverless-http";
 
 dotenv.config();
-connectDB();
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Static uploads
-app.use('/uploads', express.static('uploads'));
+// Initialize DB connection when function starts
+dbConnect();
+
+// ❌ Temporarily comment out file uploads - not compatible with serverless
+// app.use('/uploads', express.static('uploads'));
 
 // Routes
 app.use("/api/auth", authRoutes);
@@ -40,5 +42,14 @@ app.get("/", (req, res) => {
   res.send("Food Booking System API is running...");
 });
 
-// ✅ FIXED: Use default export instead of named export
+// Health check route
+app.get("/health", (req, res) => {
+  res.status(200).json({ 
+    status: "OK", 
+    message: "Server is running",
+    timestamp: new Date().toISOString()
+  });
+});
+
+// ✅ FIXED: Use default export for Vercel serverless
 export default serverless(app);
