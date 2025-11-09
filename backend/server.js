@@ -1,7 +1,8 @@
+// server.js
 import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
-import dbConnect from "./config/db.js"; // CHANGED from connectDB
+import dbConnect from "./config/db.js"; // Database connection
 import authRoutes from "./routes/authRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
 import restaurantRoutes from "./routes/restaurantRoutes.js";
@@ -10,22 +11,19 @@ import orderRoutes from "./routes/orderRoutes.js";
 import riderRoutes from "./routes/riderRoutes.js";
 import customerRoutes from "./routes/customerRoutes.js";
 import locationRoutes from "./routes/location.js";
-// import { initializeSocket } from './socket/socket.js'; 
-// ❌ Socket.io not compatible sa Vercel serverless
-
 import serverless from "serverless-http";
 
 dotenv.config();
 
+// Initialize Express
 const app = express();
+
+// Middleware
 app.use(cors());
 app.use(express.json());
 
-// Initialize DB connection when function starts
+// Connect to MongoDB
 dbConnect();
-
-// ❌ Temporarily comment out file uploads - not compatible with serverless
-// app.use('/uploads', express.static('uploads'));
 
 // Routes
 app.use("/api/auth", authRoutes);
@@ -39,17 +37,25 @@ app.use("/api/location", locationRoutes);
 
 // Default route
 app.get("/", (req, res) => {
-  res.send("Food Booking System API is running...");
+  res.send("🍽️ Food Booking System API is running...");
 });
 
 // Health check route
 app.get("/health", (req, res) => {
-  res.status(200).json({ 
-    status: "OK", 
+  res.status(200).json({
+    status: "OK",
     message: "Server is running",
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   });
 });
 
-// ✅ FIXED: Use default export for Vercel serverless
+// ✅ Local development mode (Normal Express server)
+if (process.env.NODE_ENV !== "production") {
+  const PORT = process.env.PORT || 5000;
+  app.listen(PORT, () => {
+    console.log(`🚀 Server running locally on http://localhost:${PORT}`);
+  });
+}
+
+// ✅ Export for Vercel serverless deployment
 export default serverless(app);

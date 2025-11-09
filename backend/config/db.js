@@ -1,54 +1,50 @@
+// config/db.js
 import mongoose from "mongoose";
+import dotenv from "dotenv";
 
-const connectDB = async () => {
-  try {
-    // Use the correct environment variable name and remove deprecated options
-    const conn = await mongoose.connect(process.env.MONGODB_URI);
-    console.log(`MongoDB Connected: ${conn.connection.host}`);
-  } catch (error) {
-    console.error("Database connection error:", error.message);
-    // Don't exit process in serverless environment
-  }
-};
+dotenv.config();
 
-// Serverless connection handler
 let isConnected = false;
 
-const dbConnect = async () => {
+const connectDB = async () => {
   if (isConnected) {
-    console.log('Using existing MongoDB connection');
+    console.log("✅ Using existing MongoDB connection");
     return;
   }
-  
+
   try {
-    await connectDB();
+    const conn = await mongoose.connect(process.env.MONGO_URI, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+    });
+
     isConnected = true;
-    console.log('MongoDB connection established successfully');
+    console.log(`✅ MongoDB connected: ${conn.connection.host}`);
   } catch (error) {
-    console.error('Failed to connect to MongoDB:', error);
+    console.error("❌ Database connection error:", error.message);
     isConnected = false;
   }
 };
 
 // MongoDB connection events
-mongoose.connection.on('connected', () => {
-  console.log('Mongoose connected to MongoDB');
+mongoose.connection.on("connected", () => {
+  console.log("✅ Mongoose connected to MongoDB");
 });
 
-mongoose.connection.on('error', (err) => {
-  console.error('Mongoose connection error:', err);
+mongoose.connection.on("error", (err) => {
+  console.error("❌ Mongoose connection error:", err);
 });
 
-mongoose.connection.on('disconnected', () => {
-  console.log('Mongoose disconnected from MongoDB');
+mongoose.connection.on("disconnected", () => {
+  console.log("⚠️ Mongoose disconnected from MongoDB");
   isConnected = false;
 });
 
-// Handle graceful shutdown
-process.on('SIGINT', async () => {
+// Graceful shutdown
+process.on("SIGINT", async () => {
   await mongoose.connection.close();
-  console.log('MongoDB connection closed through app termination');
+  console.log("🔒 MongoDB connection closed due to app termination");
   process.exit(0);
 });
 
-export default dbConnect;
+export default connectDB;
